@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html>
+<body>
+<head>
+<title>New XRPL Tokens</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+.loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 20px;
+  height: 20px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+<h3 style="margin: 0 auto;">XRPL TOKENS</h3>
+<div class="loader" style="margin: 0 auto;"></div>
+
+<p id="isFinding"></p>
+<p id="newTokens"></p>
+
+<script>
+  var CHECKED_LIST = [];
+today = new Date(); today.setHours(0); today.setMinutes(0); today.setSeconds(0);
+function httpGet(theUrl)
+{
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
+}
+
+function getCurrencyCode(e)
+{
+    if (e) {
+        if (40 == e.length && e.endsWith("00")) {
+            while(e.endsWith("00")) {
+                e = e.substring(0, e.length - 2); 
+            }   
+            return hex2a(e);
+        }
+        return e
+    }
+    return ""
+}
+
+function hex2a(hexx) {
+    var hex = hexx.toString();//force conversion
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+}
+
+function getNewTokens() {
+  console.log("START");
+  document.getElementById("isFinding").innerText = '.............FINDING.............';
+  
+
+  String.prototype.inList=function(list){
+    return (list.indexOf(this.toString()) != -1)
+  }
+
+  tokens = JSON.parse(httpGet("https://api.xrpldata.com/api/v1/tokens"));
+  var total = 0;
+  var allLink = '';
+  for(var token in tokens.issuers) {
+      var currencyCode = getCurrencyCode(tokens.issuers[token].tokens[0].currency);
+      var createdDate = new Date(Date.parse(tokens.issuers[token].tokens[0].created.date));
+      if(createdDate > today && CHECKED_LIST.indexOf(currencyCode) == -1) {
+          total++
+          var amount = tokens.issuers[token].tokens[0].amount;
+          var url = 'https://xumm.community/?issuer='+ token + "&currency=" + currencyCode + '&limit=' + amount;
+          {{/* console.log('_________________' + total + '_________________');
+          console.log("Currency: ", currencyCode);
+          console.log("Created date: ", createdDate);
+          console.log("Total trustline: ", tokens.issuers[token].tokens[0].trustlines);
+          console.log("KYC: ", tokens.issuers[token].data.kyc);
+          console.log("LINK: ", url); */}}
+          var kyc = tokens.issuers[token].data.kyc ? 'YES' : 'NO'
+          allLink = allLink + '__________________________________' + total + '__________________________________<br>'
+                            + 'Currency: $' + currencyCode + '<br>' + 'KYC: ' + kyc + '<br>'
+                            + 'Created date: ' + createdDate + ' | ' + 'Total trustline: ' + tokens.issuers[token].tokens[0].trustlines + '<br>'
+                            + 'LINK: ' + url.link(url) + '<br>';
+      }
+  }
+  {{/* if(allLink != '') {
+    var audio = new Audio('/Users/quangkhiem/Downloads/8KR4YVH-notification-2.mp3');
+    audio.play();
+  } */}}
+  document.getElementById('isFinding').innerText = '';
+  document.getElementById("newTokens").innerHTML = allLink;
+  console.log('END');
+}
+
+setInterval(getNewTokens, 20000);
+</script>
+
+</body>
+</html>
+
